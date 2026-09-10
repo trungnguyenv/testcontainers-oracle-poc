@@ -1,0 +1,15 @@
+{
+  "warm_start_seconds": 12.4,
+  "banner": "Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production",
+  "con_name": "ORCLPDB1",
+  "session_privs": [
+    "CREATE SESSION",
+    "CREATE TABLE"
+  ],
+  "plain_table": "ok",
+  "plain_drop": "ok",
+  "identity_table": "ORA-01031: insufficient privileges",
+  "explicit_sequence": "ORA-01031: insufficient privileges",
+  "identity_table_after_grant": "ok",
+  "identity_drop": "ok"
+}

@@ -3,87 +3,57 @@
 The database is expensive to start, so one container serves the whole session. Isolation between
 tests comes from each test owning a freshly-named table set, not from the container.
 
-Set ``ORACLE_POC_REUSE=1`` to leave the container running after the session, so the next run
-attaches to it instead of paying for startup again. Reuse is off by default, and the tests behave
-identically either way.
+The container is throwaway; the created database behind it is not. It lives in a named Docker
+volume keyed to the image digest, so the several-minute first run is paid once per pin and every
+run after starts in seconds. There is no flag: the volume is mounted unconditionally.
 """
 
-import os
 from collections.abc import Iterator
 
 import oracledb
 import pytest
-from testcontainers.community.oracle import OracleDbContainer
 
 from oracle_poc.db import connect
 from oracle_poc.tables import TableSet, create, drop
-
-IMAGE = "gvenzl/oracle-free:23-slim-faststart"
-"""Oracle 23ai Free. The faststart variant boots from a pre-built database, and unlike
-gvenzl/oracle-xe it publishes native arm64 images."""
-
-APP_USER = "app"
-APP_PASSWORD = "app"
-SERVICE_NAME = "FREEPDB1"
-
-REUSE_FLAG = "ORACLE_POC_REUSE"
-REUSED_CONTAINER_NAME = "oracle-poc-reused"
-
-
-def _reuse_requested() -> bool:
-    return os.environ.get(REUSE_FLAG, "").lower() in ("1", "true", "yes")
-
-
-def _dsn(host: str, port: int) -> str:
-    return f"{host}:{port}/{SERVICE_NAME}"
-
-
-def _already_running_port() -> int | None:
-    """The published Oracle port of a previously reused container, if one is still up."""
-    from docker.errors import NotFound
-    from testcontainers.core.docker_client import DockerClient
-
-    try:
-        container = DockerClient().client.containers.get(REUSED_CONTAINER_NAME)
-    except NotFound:
-        return None
-    if container.status != "running":
-        container.remove(force=True)
-        return None
-    bindings = container.attrs["NetworkSettings"]["Ports"].get("1521/tcp")
-    return int(bindings[0]["HostPort"]) if bindings else None
+from tests import oracle_container as oracle
 
 
 @pytest.fixture(scope="session")
 def oracle_dsn() -> Iterator[str]:
-    """A DSN pointing at an Oracle database that is up and accepting connections."""
-    if _reuse_requested():
-        port = _already_running_port()
-        if port is not None:
-            yield _dsn("localhost", port)
-            return
+    """A DSN for the PDB, on a database that is up and accepting connections.
 
-    container = OracleDbContainer(
-        image=IMAGE,
-        username=APP_USER,
-        password=APP_PASSWORD,
-        dbname=SERVICE_NAME,
-    )
+    Says nothing about users: `app_user` is what turns a live database into one this suite can
+    use.
+    """
+    container = oracle.oracle_container()
+    container.start()  # returns only once the PDB can hold a table
+    try:
+        yield oracle.dsn(
+            container.get_container_host_ip(), container.get_exposed_port(oracle.ORACLE_PORT)
+        )
+    finally:
+        container.stop()
 
-    if _reuse_requested():
-        container.with_name(REUSED_CONTAINER_NAME)
-        container.start()
-        yield _dsn(container.get_container_host_ip(), container.get_exposed_port(1521))
-        return  # deliberately left running for the next session
 
-    with container:
-        yield _dsn(container.get_container_host_ip(), container.get_exposed_port(1521))
+@pytest.fixture(scope="session")
+def app_user(oracle_dsn: str) -> str:
+    """Reset the app user, once, before any test connects as it.
+
+    SYSDBA lives for the length of this call and no longer: opened, used and closed here, so no
+    test can reach for it and no privileged connection sits open across the session.
+    """
+    connection = oracle.sys_connect(oracle_dsn)
+    try:
+        oracle.reset_app_user(connection)
+    finally:
+        connection.close()
+    return oracle.APP_USER
 
 
 @pytest.fixture
-def connection(oracle_dsn: str) -> Iterator[oracledb.Connection]:
+def connection(oracle_dsn: str, app_user: str) -> Iterator[oracledb.Connection]:
     """A connection as the app user, fresh per test so no session state leaks between tests."""
-    conn = connect(user=APP_USER, password=APP_PASSWORD, dsn=oracle_dsn)
+    conn = connect(user=app_user, password=oracle.APP_PASSWORD, dsn=oracle_dsn)
     try:
         yield conn
     finally:

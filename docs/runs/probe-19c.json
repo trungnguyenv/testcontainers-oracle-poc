@@ -1,0 +1,16 @@
+{
+  "user": "APP",
+  "con_name": "ORCLPDB1",
+  "db_name": "ORCLPDB1",
+  "banner": "Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production",
+  "max_string_size": "unreadable as app user: ORA-00942: table or view does not exist",
+  "session_privs": [
+    "CREATE SEQUENCE",
+    "CREATE SESSION",
+    "CREATE TABLE"
+  ],
+  "ORA-02291_text": "ORA-02291: integrity constraint (APP.SYS_C007616) violated - parent key not found\nHelp: https://docs.oracle.com/error-help/db/ora-02291/",
+  "ORA-12899_text": "ORA-12899: value too large for column \"APP\".\"CUSTOMERS_0365BDF2\".\"NAME\" (actual: 51, maximum: 50)\nHelp: https://docs.oracle.com/error-help/db/ora-12899/",
+  "oracledb_version": "4.0.2",
+  "thin_mode": true
+}
