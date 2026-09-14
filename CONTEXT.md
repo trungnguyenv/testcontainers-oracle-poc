@@ -36,11 +36,17 @@ An Oracle user's namespace. In Oracle a user and a schema are the same thing, so
 every table the tests create. Never used in this project to mean a set of table definitions.
 
 **App user**:
-The dedicated non-privileged Oracle user the tests connect as. Created by the test session itself
-rather than by the image, and dropped and recreated at the start of every session so its schema
-starts empty however the previous run ended. Distinct from `SYS`, which the session uses only to
-create this user and never to run a test.
+The dedicated Oracle user the tests connect as, holding a named privilege surface rather than a
+role. Created by the test session itself rather than by the image, and dropped and recreated at the
+start of every session so its schema starts empty however the previous run ended. Distinct from
+`SYS`, which the session uses only to create this user and never to run a test.
 _Avoid_: test user, admin
+
+**Privilege surface**:
+The set of system privileges the app user is granted, chosen to cover the object types a data-access
+layer works with rather than the ones the current tests exercise. Named and listed in full, so every
+entry can be accounted for; the point of the term is that nothing is granted by a role.
+_Avoid_: permissions, grants, role, `RESOURCE`
 
 ### Domain under test
 

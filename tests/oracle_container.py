@@ -24,6 +24,26 @@ SERVICE_NAME = "ORCLPDB1"
 APP_USER = "app"
 APP_PASSWORD = "app"
 
+PRIVILEGE_SURFACE = (
+    "CREATE SESSION",
+    "CREATE TABLE",
+    "CREATE SEQUENCE",
+    "CREATE VIEW",
+    "CREATE PROCEDURE",
+    "CREATE TRIGGER",
+    "CREATE TYPE",
+    "CREATE SYNONYM",
+    "CREATE MATERIALIZED VIEW",
+)
+"""What the app user may create, chosen as a set a data-access layer can defend (ADR 0003).
+
+Not sized to the current tests, which need only the first three. Oracle grants nothing separately
+for DDL on one's own schema: ALTER, DROP, TRUNCATE, COMMENT ON and CREATE INDEX on owned tables
+come with ownership, so this list is the whole DDL surface short of the ANY privileges, which reach
+into other schemas. CREATE PROCEDURE is three object types wide — procedures, functions and
+packages — so the count here is not the count of things the app user can create.
+"""
+
 ORADATA = "/opt/oracle/oradata"
 """Where DBCA writes the created database. The image declares no VOLUME, so without a mount the
 ~3GB lands in the container's writable layer and dies with the container."""
@@ -118,10 +138,12 @@ def reset_app_user(connection: oracledb.Connection) -> None:
     so a table set left behind by a killed session would otherwise survive into the next one.
     ``DROP USER ... CASCADE`` makes the schema empty by construction.
 
-    The grant list is the whole privilege surface, spelled out. The 23ai image handed the app
-    user ``DB_DEVELOPER_ROLE`` — 29 privileges — and the suite silently leaned on one of them:
-    ``CREATE SEQUENCE``, which an identity column needs for the sequence Oracle creates behind
-    it. Without it every ``CREATE TABLE`` in the suite fails with ORA-01031 (#7).
+    The grants are ``PRIVILEGE_SURFACE``, spelled out rather than rolled into a role. The 23ai
+    image handed the app user ``DB_DEVELOPER_ROLE`` — 29 privileges — and the suite silently
+    leaned on one of them: ``CREATE SEQUENCE``, which an identity column needs for the sequence
+    Oracle creates behind it. Without it every ``CREATE TABLE`` in the suite fails with ORA-01031
+    (#7). The surface is not re-asserted after bootstrap: this function creates the user, so
+    nothing else can grant it anything, and a missing privilege says ORA-01031 by name (#10).
 
     The quota is the other easy-to-miss, fatal part. Its tablespace is read from the database
     rather than spelled ``USERS``.
@@ -138,5 +160,5 @@ def reset_app_user(connection: oracledb.Connection) -> None:
             if problem.full_code != "ORA-01918":  # user does not exist: a first-ever run
                 raise
         cursor.execute(f'CREATE USER {APP_USER} IDENTIFIED BY "{APP_PASSWORD}"')
-        cursor.execute(f"GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO {APP_USER}")
+        cursor.execute(f"GRANT {', '.join(PRIVILEGE_SURFACE)} TO {APP_USER}")
         cursor.execute(f"ALTER USER {APP_USER} QUOTA UNLIMITED ON {tablespace}")
