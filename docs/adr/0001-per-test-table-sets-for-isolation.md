@@ -14,7 +14,11 @@ truncating shared tables between tests.
   to clean and leaves tests coupled to a single mutable schema.
 - **A fresh Oracle schema (user) per test.** Achieves the same isolation while keeping table names
   literal, at the cost of a `CREATE USER` per test. Rejected as more machinery than a POC needs,
-  but it is the natural upgrade path if the interpolation cost below starts to hurt.
+  but it is the natural upgrade path if the interpolation cost below starts to hurt. That upgrade
+  has since become less natural than it reads here: `CREATE USER` needs `SYS`, and ADR 0002's
+  bootstrap deliberately opens the SYSDBA connection once and closes it before any test runs, so a
+  per-test schema would mean holding a privileged connection open across the session or reopening
+  one per test.
 
 ## Consequences
 
