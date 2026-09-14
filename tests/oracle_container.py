@@ -143,7 +143,9 @@ def reset_app_user(connection: oracledb.Connection) -> None:
     leaned on one of them: ``CREATE SEQUENCE``, which an identity column needs for the sequence
     Oracle creates behind it. Without it every ``CREATE TABLE`` in the suite fails with ORA-01031
     (#7). The surface is not re-asserted after bootstrap: this function creates the user, so
-    nothing else can grant it anything, and a missing privilege says ORA-01031 by name (#10).
+    nothing else can grant it anything (#10). A missing privilege does *not* announce itself by
+    name, though — ORA-01031 says only "insufficient privileges", which is why #7 needed a
+    bisection to find ``CREATE SEQUENCE``.
 
     The quota is the other easy-to-miss, fatal part. Its tablespace is read from the database
     rather than spelled ``USERS``.
