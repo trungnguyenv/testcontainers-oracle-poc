@@ -31,6 +31,13 @@ _Avoid_: reuse mode, cached database, warm container
 
 ### Oracle
 
+**PDB**:
+The pluggable database the tests connect to, as opposed to the CDB root that contains it.
+Everything this project creates lives in the PDB: the app user is an ordinary user there rather
+than a common user spanning the container, and the tests' DSN names the PDB's service, never the
+root.
+_Avoid_: CDB, container database, instance, SID
+
 **Schema**:
 An Oracle user's namespace. In Oracle a user and a schema are the same thing, so the app user owns
 every table the tests create. Never used in this project to mean a set of table definitions.
