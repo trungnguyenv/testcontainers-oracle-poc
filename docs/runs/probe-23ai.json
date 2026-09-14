@@ -1,0 +1,11 @@
+{
+  "user": "APP",
+  "con_name": "FREEPDB1",
+  "db_name": "FREEPDB1",
+  "banner": "Oracle AI Database 26ai Free Release 23.26.3.0.0 - Develop, Learn, and Run for Free",
+  "max_string_size": "STANDARD",
+  "ORA-02291_text": "ORA-02291: integrity constraint (APP.SYS_C008788) violated - parent key not found\nHelp: https://docs.oracle.com/error-help/db/ora-02291/",
+  "ORA-12899_text": "ORA-12899: value too large for column \"APP\".\"CUSTOMERS_8EA35AF7\".\"NAME\" (actual: 51, maximum: 50)\nHelp: https://docs.oracle.com/error-help/db/ora-12899/",
+  "oracledb_version": "4.0.2",
+  "thin_mode": true
+}

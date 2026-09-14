@@ -1,0 +1,75 @@
+{
+  "start_seconds": 13.5,
+  "minimal_grants": [
+    "CREATE SESSION",
+    "CREATE TABLE"
+  ],
+  "pass1_minimal": {
+    "plain_table": "ok",
+    "index_on_own_table": "ok",
+    "alter_own_table": "ok",
+    "truncate_own_table": "ok",
+    "comment_own_table": "ok",
+    "identity_table": "ORA-01031",
+    "sequence": "ORA-01031",
+    "view": "ORA-01031",
+    "materialized_view": "ORA-01031",
+    "trigger": "ORA-01031",
+    "procedure": "ORA-01031",
+    "function": "ORA-01031",
+    "package": "ORA-01031",
+    "type": "ORA-01031",
+    "synonym": "ORA-01031",
+    "drop_own_table": "ok"
+  },
+  "candidate_set": [
+    "CREATE SESSION",
+    "CREATE TABLE",
+    "CREATE SEQUENCE",
+    "CREATE VIEW",
+    "CREATE PROCEDURE",
+    "CREATE TRIGGER",
+    "CREATE TYPE",
+    "CREATE SYNONYM",
+    "CREATE MATERIALIZED VIEW"
+  ],
+  "pass2_candidate": {
+    "plain_table": "ok",
+    "index_on_own_table": "ok",
+    "alter_own_table": "ok",
+    "truncate_own_table": "ok",
+    "comment_own_table": "ok",
+    "identity_table": "ok",
+    "sequence": "ok",
+    "view": "ok",
+    "materialized_view": "ok",
+    "trigger": "ok",
+    "procedure": "ok",
+    "function": "ok",
+    "package": "ok",
+    "type": "ok",
+    "synonym": "ok",
+    "drop_own_table": "ok"
+  },
+  "pass2_session_privs": [
+    "CREATE MATERIALIZED VIEW",
+    "CREATE PROCEDURE",
+    "CREATE SEQUENCE",
+    "CREATE SESSION",
+    "CREATE SYNONYM",
+    "CREATE TABLE",
+    "CREATE TRIGGER",
+    "CREATE TYPE",
+    "CREATE VIEW"
+  ],
+  "resource_role_contents": [
+    "CREATE CLUSTER",
+    "CREATE INDEXTYPE",
+    "CREATE OPERATOR",
+    "CREATE PROCEDURE",
+    "CREATE SEQUENCE",
+    "CREATE TABLE",
+    "CREATE TRIGGER",
+    "CREATE TYPE"
+  ]
+}

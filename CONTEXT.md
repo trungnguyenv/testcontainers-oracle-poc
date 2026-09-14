@@ -22,9 +22,12 @@ _Avoid_: schema (means something else here), test tables, fixtures
 The random hex string appended to table names to make one test's table set distinct from every
 other's.
 
-**Reuse mode**:
-The opt-in setting that leaves the Oracle container running between local test runs so repeat runs
-skip database startup. Off by default.
+**Created database**:
+The Oracle database built on first boot, which lives on outside any single container. The image
+ships binaries only, so the first run pays several minutes to create the database; every run after
+that starts a fresh container against the database already there. Keyed to the pinned image
+digest, so a digest bump creates a new one rather than reusing the old.
+_Avoid_: reuse mode, cached database, warm container
 
 ### Oracle
 
@@ -33,9 +36,17 @@ An Oracle user's namespace. In Oracle a user and a schema are the same thing, so
 every table the tests create. Never used in this project to mean a set of table definitions.
 
 **App user**:
-The dedicated non-privileged Oracle user the tests connect as, created when the container boots.
-Distinct from `SYSTEM`, which the tests never use.
+The dedicated Oracle user the tests connect as, holding a named privilege surface rather than a
+role. Created by the test session itself rather than by the image, and dropped and recreated at the
+start of every session so its schema starts empty however the previous run ended. Distinct from
+`SYS`, which the session uses only to create this user and never to run a test.
 _Avoid_: test user, admin
+
+**Privilege surface**:
+The set of system privileges the app user is granted, chosen to cover the object types a data-access
+layer works with rather than the ones the current tests exercise. Named and listed in full, so every
+entry can be accounted for; the point of the term is that nothing is granted by a role.
+_Avoid_: permissions, grants, role, `RESOURCE`
 
 ### Domain under test
 
