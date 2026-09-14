@@ -35,9 +35,12 @@ create.
   the 23ai failure mode in miniature, and every entry in this list has to answer "why is this
   here?".
 - **Asserting the granted set after bootstrap**, to catch drift. Rejected as machinery for a closed
-  door. Since ADR 0002 the session drops and recreates the app user itself, so the image never
-  touches it and nothing else can grant it anything; drift downward already announces itself as
-  `ORA-01031`, naming the privilege.
+  door: since ADR 0002 the session drops and recreates the app user itself, so the image never
+  touches it and nothing else can grant it anything. Note that the closed door is the whole of the
+  argument. An earlier draft of this ADR also claimed drift announces itself as `ORA-01031`
+  "naming the privilege", and that is false — the verbatim text is `ORA-01031: insufficient
+  privileges` and nothing more, which is why #7 needed a bisection to land on `CREATE SEQUENCE`.
+  Evidence: `docs/runs/privilege-bisection-19c.json`.
 
 ## Consequences
 
@@ -48,6 +51,22 @@ tables — those come with ownership. Every privilege that had to be granted was
 `CREATE <object type>`, and the only way to widen DDL past this list is the `ANY` variants, which
 reach into other schemas and are deliberately absent. Evidence:
 `docs/runs/own-schema-ddl-19c.json`.
+
+Six of the nine — `CREATE VIEW`, `CREATE PROCEDURE`, `CREATE TRIGGER`, `CREATE TYPE`,
+`CREATE SYNONYM`, `CREATE MATERIALIZED VIEW` — are exercised by nothing in `test_orders.py`, so
+they are defended by a test that *uses* them rather than by one that reads the granted set back.
+A separate module creates one object of each type in the app user's schema and drops it, one test
+per privilege, so a grant that turns out to be insufficient fails on its own name — the naming
+`ORA-01031` declines to do. This measures sufficiency, which is not obvious: an identity column
+needing `CREATE SEQUENCE` was the surprise that started this, and a materialized view builds a
+real table underneath it. If a privilege proves insufficient, the surface widens and the extra
+grant is recorded here; that outcome is the test paying for itself, not a defect.
+
+It is deliberately not in `test_orders.py`, whose docstring claims every assertion there depends
+on behaviour only a real Oracle database exhibits. Grant semantics qualify, but "the seven" is a
+phrase about that file, and this is not one of them. Asserting `session_privs` equals the constant
+was rejected for the same reason it would have been the first test in the suite to fail only when
+the fixture is misconfigured.
 
 The list lives in `tests/oracle_container.py`, beside the `CREATE USER` that needs it, rather than
 in `src/oracle_poc/` next to the `NUMBER`-to-`Decimal` handler that `db.py` argues belongs in
